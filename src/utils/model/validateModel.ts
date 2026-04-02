@@ -10,6 +10,11 @@ import {
   AuthenticationError,
 } from '@anthropic-ai/sdk'
 import { getModelStrings } from './modelStrings.js'
+import {
+  isSiliconFlowModel,
+  isSiliconFlowAvailable,
+  SILICONFLOW_MODEL_PREFIX,
+} from './siliconflow.js'
 
 // Cache valid models to avoid repeated API calls
 const validModelCache = new Map<string, boolean>()
@@ -41,6 +46,20 @@ export async function validateModel(
     return { valid: true }
   }
 
+  // SiliconFlow models bypass Anthropic API validation
+  if (isSiliconFlowModel(normalizedModel) && isSiliconFlowAvailable()) {
+    return { valid: true }
+  }
+  // Also accept raw SiliconFlow model IDs typed by the user (without prefix)
+  // and auto-prefix them — but validation caller (SetModelAndClose) sets the
+  // model as-is, so we just accept them here.
+  if (
+    normalizedModel.startsWith(SILICONFLOW_MODEL_PREFIX) &&
+    isSiliconFlowAvailable()
+  ) {
+    return { valid: true }
+  }
+
   // Check if it matches ANTHROPIC_CUSTOM_MODEL_OPTION (pre-validated by the user)
   if (normalizedModel === process.env.ANTHROPIC_CUSTOM_MODEL_OPTION) {
     return { valid: true }
@@ -50,7 +69,6 @@ export async function validateModel(
   if (validModelCache.has(normalizedModel)) {
     return { valid: true }
   }
-
 
   // Try to make an actual API call with minimal parameters
   try {

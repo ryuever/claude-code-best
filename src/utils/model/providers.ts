@@ -10,6 +10,7 @@ export type APIProvider =
   | 'openai'
   | 'gemini'
   | 'grok'
+  | 'siliconflow'
 
 export function getAPIProvider(): APIProvider {
   const modelType = getInitialSettings().modelType
@@ -26,6 +27,19 @@ export function getAPIProvider(): APIProvider {
   if (isEnvTruthy(process.env.CLAUDE_CODE_USE_GROK)) return 'grok'
 
   return 'firstParty'
+}
+
+/**
+ * Determine the effective provider for a given model.
+ * SiliconFlow models (prefixed with `siliconflow:`) override the base provider.
+ */
+export function getEffectiveProvider(model?: string): APIProvider {
+  if (model) {
+    const { isSiliconFlowModel } =
+      require('./siliconflow.js') as typeof import('./siliconflow.js')
+    if (isSiliconFlowModel(model)) return 'siliconflow'
+  }
+  return getAPIProvider()
 }
 
 export function getAPIProviderForStatsig(): AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS {

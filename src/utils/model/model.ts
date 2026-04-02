@@ -440,6 +440,12 @@ export function renderModelName(model: ModelName): string {
   if (publicName) {
     return publicName
   }
+  // SiliconFlow models: show "SF: ShortName" instead of the raw prefixed ID
+  const { isSiliconFlowModel, getSiliconFlowModelDisplayName } =
+    require('./siliconflow.js') as typeof import('./siliconflow.js')
+  if (isSiliconFlowModel(model)) {
+    return `SF: ${getSiliconFlowModelDisplayName(model)}`
+  }
   if (process.env.USER_TYPE === 'ant') {
     const resolved = parseUserSpecifiedModel(model)
     const antModel = resolveAntModel(model)
