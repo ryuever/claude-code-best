@@ -98,6 +98,13 @@ export async function getAnthropicClient({
   fetchOverride?: ClientOptions['fetch']
   source?: string
 }): Promise<Anthropic> {
+  // SiliconFlow: return adapter client when the model is a SiliconFlow model
+  const { isSiliconFlowModel } = await import('src/utils/model/siliconflow.js')
+  if (isSiliconFlowModel(model)) {
+    const { createSiliconFlowClient } = await import('./siliconflow.js')
+    return createSiliconFlowClient()
+  }
+
   const containerId = process.env.CLAUDE_CODE_CONTAINER_ID
   const remoteSessionId = process.env.CLAUDE_CODE_REMOTE_SESSION_ID
   const clientApp = process.env.CLAUDE_AGENT_SDK_CLIENT_APP

@@ -461,6 +461,45 @@ function getKnownModelOption(model: string): ModelOption | null {
 export function getModelOptions(fastMode = false): ModelOption[] {
   const options = getModelOptionsBase(fastMode)
 
+  // ── SiliconFlow models ──────────────────────────────────────────────
+  // When SILICONFLOW_API_KEY is set, append SiliconFlow models to the picker.
+  {
+    const {
+      isSiliconFlowAvailable,
+      getDefaultSiliconFlowModel,
+      getSiliconFlowModelDisplayName,
+      SILICONFLOW_KNOWN_MODELS,
+      SILICONFLOW_MODEL_PREFIX,
+    } = require('./siliconflow.js') as typeof import('./siliconflow.js')
+
+    if (isSiliconFlowAvailable()) {
+      // Add the user-configured default model first (may or may not be in the known list)
+      const defaultModel = getDefaultSiliconFlowModel()
+      const defaultPrefixed = `${SILICONFLOW_MODEL_PREFIX}${defaultModel}`
+      if (!options.some(o => o.value === defaultPrefixed)) {
+        options.push({
+          value: defaultPrefixed,
+          label: `SF: ${getSiliconFlowModelDisplayName(defaultModel)}`,
+          description: `SiliconFlow · ${defaultModel}`,
+          descriptionForModel: `SiliconFlow model ${defaultModel}`,
+        })
+      }
+
+      // Add known models that aren't already listed
+      for (const modelId of SILICONFLOW_KNOWN_MODELS) {
+        const prefixed = `${SILICONFLOW_MODEL_PREFIX}${modelId}`
+        if (!options.some(o => o.value === prefixed)) {
+          options.push({
+            value: prefixed,
+            label: `SF: ${getSiliconFlowModelDisplayName(modelId)}`,
+            description: `SiliconFlow · ${modelId}`,
+            descriptionForModel: `SiliconFlow model ${modelId}`,
+          })
+        }
+      }
+    }
+  }
+
   // Add the custom model from the ANTHROPIC_CUSTOM_MODEL_OPTION env var
   const envCustomModel = process.env.ANTHROPIC_CUSTOM_MODEL_OPTION
   if (
